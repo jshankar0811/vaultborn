@@ -4,41 +4,85 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vaultborn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
     <header>
       <h1>VAULTBORN</h1>
-      <div id="hud">
-        <span id="hud-hp">HP: 10/10</span>
-        <span id="hud-atk">ATK: 3</span>
-        <span id="hud-def">DEF: 1</span>
-        <span id="hud-floor">Floor: 1</span>
-        <span id="hud-gold">Gold: 0</span>
+      <div id="hud-right">
+        <span id="hud-level">LVL 1</span>
+        <span id="hud-floor">FLOOR 1</span>
+        <span id="hud-gold">0g</span>
       </div>
     </header>
 
     <div id="main">
-      <canvas id="game-canvas"></canvas>
+      <div id="canvas-wrap">
+        <canvas id="game-canvas"></canvas>
+      </div>
 
       <aside id="sidebar">
-        <div id="inventory-panel">
-          <h3>Inventory</h3>
+        <div class="panel" id="stats-panel">
+          <div class="panel-title">CHARACTER</div>
+          <div class="stat-row">
+            <span class="stat-label">HP</span>
+            <span id="hp-text" class="stat-value hp-val">20/20</span>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar"><div id="hp-fill" class="bar-fill hp"></div></div>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">XP</span>
+            <span id="xp-text" class="stat-value xp-val">0/15</span>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar"><div id="xp-fill" class="bar-fill xp"></div></div>
+          </div>
+          <div class="divider"></div>
+          <div class="stat-row">
+            <span class="stat-label">ATK</span>
+            <span id="hud-atk" class="stat-value atk-val">4</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">DEF</span>
+            <span id="hud-def" class="stat-value def-val">1</span>
+          </div>
+        </div>
+
+        <div class="panel" id="equip-panel">
+          <div class="panel-title">EQUIPMENT</div>
+          <div id="equip-weapon" class="equip-slot empty">[ no weapon ]</div>
+          <div id="equip-armor"  class="equip-slot empty">[ no armor ]</div>
+        </div>
+
+        <div class="panel" id="bag-panel">
+          <div class="panel-title">BAG <span id="bag-hint">(P to use)</span></div>
           <ul id="inventory-list"></ul>
         </div>
-        <div id="log-panel">
-          <h3>Log</h3>
+
+        <div class="panel" id="log-panel">
+          <div class="panel-title">LOG</div>
           <ul id="message-log"></ul>
         </div>
       </aside>
     </div>
 
+    <div id="controls-bar">
+      <span>Move: WASD / arrows / hjkl</span>
+      <span>Use potion: P</span>
+      <span>Descend: walk onto &gt;</span>
+    </div>
+
     <div id="overlay" class="hidden">
       <div id="overlay-box">
-        <h2 id="overlay-title"></h2>
+        <h2 id="overlay-title">YOU DIED</h2>
+        <p id="overlay-stats"></p>
         <p id="overlay-msg"></p>
-        <button id="overlay-btn">Play Again</button>
+        <button id="overlay-btn">PLAY AGAIN</button>
       </div>
     </div>
   </div>
