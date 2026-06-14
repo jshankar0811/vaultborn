@@ -51,6 +51,11 @@
             <span class="stat-label">DEF</span>
             <span id="hud-def" class="stat-value def-val">1</span>
           </div>
+          <div id="effects-row" class="hidden">
+            <div class="divider"></div>
+            <div class="panel-title" style="margin-top:4px">EFFECTS</div>
+            <div id="effects-list"></div>
+          </div>
         </div>
 
         <div class="panel" id="equip-panel">
@@ -60,8 +65,13 @@
         </div>
 
         <div class="panel" id="bag-panel">
-          <div class="panel-title">BAG <span id="bag-hint">(P to use)</span></div>
+          <div class="panel-title">BAG <span id="bag-hint">(P=potion U=scroll)</span></div>
           <ul id="inventory-list"></ul>
+        </div>
+
+        <div class="panel" id="map-panel">
+          <div class="panel-title">MAP</div>
+          <canvas id="minimap" width="128" height="75"></canvas>
         </div>
 
         <div class="panel" id="log-panel">
@@ -73,18 +83,44 @@
 
     <div id="controls-bar">
       <span>Move: WASD / arrows / hjkl</span>
-      <span>Use potion: P</span>
-      <span>Descend: walk onto &gt;</span>
+      <span>Potion: P</span>
+      <span>Scroll: U</span>
+      <span>Click to move/attack</span>
     </div>
 
+    <!-- Shop overlay -->
+    <div id="shop-overlay" class="hidden">
+      <div id="shop-box">
+        <h2>MERCHANT</h2>
+        <p id="shop-flavor"></p>
+        <div id="shop-gold-row">Gold: <span id="shop-gold-amount">0</span>g</div>
+        <div id="shop-items-list"></div>
+        <button id="shop-leave">CONTINUE</button>
+      </div>
+    </div>
+
+    <!-- Game over / win overlay -->
     <div id="overlay" class="hidden">
       <div id="overlay-box">
         <h2 id="overlay-title">YOU DIED</h2>
         <p id="overlay-stats"></p>
         <p id="overlay-msg"></p>
+        <div id="high-scores-section">
+          <div class="panel-title" style="margin-bottom:8px">BEST RUNS</div>
+          <div id="high-scores-list"></div>
+        </div>
         <button id="overlay-btn">PLAY AGAIN</button>
       </div>
     </div>
+
+    <!-- Inspect tooltip -->
+    <div id="inspect-tooltip" class="hidden">
+      <div id="tt-name"></div>
+      <div id="tt-stats"></div>
+    </div>
+
+    <!-- Floor fade -->
+    <div id="fade-overlay"></div>
   </div>
 
   <script src="game.js"></script>
