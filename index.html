@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vaultborn</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>VAULTBORN</h1>
+      <div id="hud">
+        <span id="hud-hp">HP: 10/10</span>
+        <span id="hud-atk">ATK: 3</span>
+        <span id="hud-def">DEF: 1</span>
+        <span id="hud-floor">Floor: 1</span>
+        <span id="hud-gold">Gold: 0</span>
+      </div>
+    </header>
+
+    <div id="main">
+      <canvas id="game-canvas"></canvas>
+
+      <aside id="sidebar">
+        <div id="inventory-panel">
+          <h3>Inventory</h3>
+          <ul id="inventory-list"></ul>
+        </div>
+        <div id="log-panel">
+          <h3>Log</h3>
+          <ul id="message-log"></ul>
+        </div>
+      </aside>
+    </div>
+
+    <div id="overlay" class="hidden">
+      <div id="overlay-box">
+        <h2 id="overlay-title"></h2>
+        <p id="overlay-msg"></p>
+        <button id="overlay-btn">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
