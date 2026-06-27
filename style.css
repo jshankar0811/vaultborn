@@ -67,7 +67,18 @@ h1 { font-family: 'Press Start 2P', monospace; font-size: 1rem; color: var(--gol
 #message-log li.system { color: #9058c8; }
 #message-log li.boss   { color: #ff6040; font-weight: bold; }
 
-#controls-bar { display: flex; gap: 20px; font-size: 0.82rem; color: var(--text-dim); padding-top: 6px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+#controls-bar { display: flex; align-items: center; gap: 20px; font-size: 0.82rem; color: var(--text-dim); padding-top: 6px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.ctrl-sep { flex: 1; }
+.ctrl-group { display: flex; align-items: center; gap: 6px; }
+.ctrl-group label { color: var(--text-dim); }
+
+#vol-slider { -webkit-appearance: none; appearance: none; width: 80px; height: 3px; background: var(--border-hi); border-radius: 2px; outline: none; cursor: pointer; }
+#vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--gold); cursor: pointer; }
+#vol-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); border: none; cursor: pointer; }
+
+.zoom-btn { background: none; border: 1px solid var(--border-hi); color: var(--text-dim); font-family: 'VT323', monospace; font-size: 1rem; width: 22px; height: 22px; line-height: 1; cursor: pointer; transition: all 0.12s; padding: 0; }
+.zoom-btn:hover { border-color: var(--gold); color: var(--gold); }
+#zoom-label { color: var(--text); min-width: 24px; text-align: center; }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #08081a; }
@@ -120,6 +131,32 @@ h1 { font-family: 'Press Start 2P', monospace; font-size: 1rem; color: var(--gol
 #inspect-tooltip.hidden { display: none; }
 #tt-name { color: var(--text); font-size: 1rem; margin-bottom: 4px; }
 #tt-stats { color: var(--text-dim); font-size: 0.82rem; }
+
+/* Class selection */
+#class-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.96); display: flex; align-items: center; justify-content: center; z-index: 120; }
+#class-overlay.hidden { display: none; }
+#class-box { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+#class-box h2 { font-family: 'Press Start 2P', monospace; font-size: 1.2rem; color: var(--gold); letter-spacing: 0.2em; animation: titleGlow 3s ease-in-out infinite; }
+#class-subtitle { color: var(--text-dim); font-size: 0.95rem; }
+#class-cards { display: flex; gap: 18px; }
+.class-card { background: #07071a; border: 1px solid var(--border-hi); padding: 22px 18px; width: 170px; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 10px; }
+.class-card:hover { border-color: var(--gold); box-shadow: 0 0 28px rgba(232,200,122,0.12); transform: translateY(-2px); }
+.class-card-name { font-family: 'Press Start 2P', monospace; font-size: 0.55rem; letter-spacing: 0.1em; }
+.class-card-stats { font-size: 0.85rem; color: var(--text-dim); line-height: 1.7; }
+.class-card-stats span { color: var(--text); }
+.class-card-divider { border-top: 1px solid var(--border); margin: 2px 0; }
+.class-card-desc { font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
+.class-card-items { font-size: 0.8rem; color: #70b870; line-height: 1.5; }
+
+/* Pause overlay */
+#pause-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 95; backdrop-filter: blur(3px); }
+#pause-overlay.hidden { display: none; }
+#pause-box { background: #080818; border: 1px solid var(--border-hi); padding: 40px 56px; display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 240px; }
+#pause-box h2 { font-family: 'Press Start 2P', monospace; font-size: 0.8rem; color: var(--text); letter-spacing: 0.18em; margin-bottom: 6px; }
+.pause-btn { background: none; border: 1px solid var(--border-hi); color: var(--text); font-family: 'Press Start 2P', monospace; font-size: 0.48rem; padding: 12px 28px; cursor: pointer; letter-spacing: 0.12em; transition: all 0.15s; width: 100%; }
+.pause-btn:hover { border-color: var(--gold); color: var(--gold); }
+#pause-restart { border-color: #3a1818; color: #806060; margin-top: 4px; }
+#pause-restart:hover { border-color: #d84040; color: #d84040; }
 
 /* Fade overlay for floor transitions */
 #fade-overlay { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 80; transition: opacity 0.45s ease; }

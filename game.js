@@ -70,6 +70,46 @@ const SHOP_FLAVORS = [
   "Trade now — the darkness grows impatient.",
 ];
 
+// ── Classes ───────────────────────────────────────────────────────────────────
+const CLASSES = {
+  warrior: {
+    name: 'Warrior', color: '#e07828',
+    desc: 'Tough and resilient. Built to take hits and keep swinging.',
+    hp: 36, atk: 4, def: 3, critChance: 0,
+    startWeapon: { name: 'Short Sword', value: 3, type: 'weapon' },
+    startItems:  [],
+    itemsLabel:  'Starts with Short Sword',
+  },
+  rogue: {
+    name: 'Rogue', color: '#50c870',
+    desc: 'Glass cannon. Strikes fast and hits hard — but one mistake costs.',
+    hp: 20, atk: 7, def: 1, critChance: 0.25,
+    startWeapon: null,
+    startItems:  [{ name: 'Health Potion', type: 'potion', value: 20 }],
+    itemsLabel:  '25% crit chance • Health Potion',
+  },
+  mage: {
+    name: 'Mage', color: '#9060e0',
+    desc: 'Frail but destructive. Commands powerful scrolls from the start.',
+    hp: 16, atk: 3, def: 1, critChance: 0,
+    startWeapon: null,
+    startItems:  [
+      { name: 'Fireball Scroll', type: 'scroll', effect: 'fireball' },
+      { name: 'Blink Scroll',    type: 'scroll', effect: 'blink'    },
+    ],
+    itemsLabel: 'Starts with Fireball + Blink scroll',
+  },
+};
+
+// ── Music ─────────────────────────────────────────────────────────────────────
+const THEME_MUSIC = {
+  'Stone Vault':     { root: 55,  scale: [0,3,5,7,10], timbre: 'sine',     noteInterval: 3400 },
+  'Ancient Crypt':   { root: 58,  scale: [0,2,3,7,8],  timbre: 'triangle', noteInterval: 4200 },
+  'Dark Cavern':     { root: 41,  scale: [0,3,5,6,10], timbre: 'sine',     noteInterval: 3000 },
+  'Infernal Depths': { root: 46,  scale: [0,1,5,7,10], timbre: 'sawtooth', noteInterval: 2600 },
+  'The Abyss':       { root: 49,  scale: [0,3,5,6,7],  timbre: 'sine',     noteInterval: 5000 },
+};
+
 // ── Canvas & context ──────────────────────────────────────────────────────────
 const canvas  = document.getElementById('game-canvas');
 const ctx     = canvas.getContext('2d');
@@ -79,13 +119,74 @@ canvas.height = ROWS * TILE;
 const mm    = document.getElementById('minimap');
 const mmCtx = mm.getContext('2d');
 
+// ── Sprites ───────────────────────────────────────────────────────────────────
+const sprites = {};
+
+{
+  const SPRITE_DIR = 'Pictures/24x24/';
+  const FILES = {
+    player:           '01_player_hero.png',
+    Rat:              '02_rat.png',
+    Goblin:           '03_goblin.png',
+    Skeleton:         '04_skeleton.png',
+    Orc:              '05_orc.png',
+    Troll:            '06_troll.png',
+    Vampire:          '07_vampire.png',
+    Lich:             '08_lich.png',
+    'Vault Warden':   '09_vault_warden_boss.png',
+    'Health Potion':  '10_health_potion.png',
+    'Big Potion':     '11_big_potion.png',
+    sword:            '12_sword.png',
+    'Battle Axe':     '13_battle_axe.png',
+    'Leather Armor':  '14_leather_armor.png',
+    'Chain Mail':     '15_chain_mail.png',
+    'Plate Armor':    '16_plate_armor.png',
+    gold:             '17_gold_coin_pile.png',
+    'Fireball Scroll':'18_fireball_scroll.png',
+    scroll:           '19_blink_reveal_scroll.png',
+    tile_stairs:      '22_stairs_down.png',
+    tile_trap:        '23_spike_trap.png',
+  };
+  for (const [key, file] of Object.entries(FILES)) {
+    const img = new Image();
+    img.onload = () => { sprites[key] = img; };
+    img.src = SPRITE_DIR + file;
+  }
+}
+
+const SPRITE_ALIASES = {
+  'Short Sword':  'sword',
+  'Long Sword':   'sword',
+  'Gold Coin':    'gold',
+  'Gold Pile':    'gold',
+  'Blink Scroll': 'scroll',
+  'Reveal Scroll':'scroll',
+};
+
+function drawSprite(key, dx, dy, size) {
+  const img = sprites[SPRITE_ALIASES[key] || key];
+  if (!img?.complete || !img.naturalWidth) return false;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, dx, dy, size, size);
+  return true;
+}
+
 // ── Audio ─────────────────────────────────────────────────────────────────────
 let _ac = null;
+let _masterGain = null;
+
 function ac() {
-  if (!_ac) { try { _ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; } }
+  if (!_ac) {
+    try { _ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+    _masterGain = _ac.createGain();
+    _masterGain.gain.value = parseFloat(localStorage.getItem('vaultborn_vol') ?? '0.5');
+    _masterGain.connect(_ac.destination);
+  }
   if (_ac.state === 'suspended') _ac.resume();
   return _ac;
 }
+
+function audioDest() { ac(); return _masterGain; }
 
 function osc(freq, type, dur, vol, startFreq) {
   const a = ac(); if (!a) return;
@@ -99,7 +200,7 @@ function osc(freq, type, dur, vol, startFreq) {
   } else {
     o.frequency.setValueAtTime(freq, a.currentTime);
   }
-  o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + dur + 0.05);
+  o.connect(g); g.connect(audioDest()); o.start(); o.stop(a.currentTime + dur + 0.05);
 }
 
 function noise(dur, vol, filterFreq) {
@@ -113,7 +214,7 @@ function noise(dur, vol, filterFreq) {
   const g = a.createGain();
   g.gain.setValueAtTime(vol, a.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
-  src.connect(f); f.connect(g); g.connect(a.destination);
+  src.connect(f); f.connect(g); g.connect(audioDest());
   src.start(); src.stop(a.currentTime + dur + 0.05);
 }
 
@@ -139,6 +240,68 @@ const sfx = {
   gameOver:  () => { chord([220, 185, 165, 147], 'sine', 0.38, 0.14); },
   footstep:  () => { if (Math.random() > 0.35) return; noise(0.06, 0.05, 350 + Math.random()*200); },
 };
+
+// ── Music system ──────────────────────────────────────────────────────────────
+let musicState = null;
+
+function startMusic(theme) {
+  stopMusic();
+  const a = ac(); if (!a) return;
+  const config = THEME_MUSIC[theme.name]; if (!config) return;
+
+  const g = a.createGain();
+  g.gain.setValueAtTime(0.001, a.currentTime);
+  g.gain.linearRampToValueAtTime(0.35, a.currentTime + 3);
+  g.connect(audioDest());
+
+  // Sustained drone (root + fifth)
+  const droneOscs = [config.root, config.root * 1.5].map((freq, i) => {
+    const o = a.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+    const dg = a.createGain(); dg.gain.value = i === 0 ? 0.10 : 0.04;
+    o.connect(dg); dg.connect(g); o.start();
+    return o;
+  });
+
+  musicState = { gain: g, droneOscs, config, timeout: null };
+  scheduleNote();
+}
+
+function scheduleNote() {
+  if (!musicState || !_ac) return;
+  const { config, gain } = musicState;
+  const a = _ac;
+
+  const semitone = config.scale[Math.floor(Math.random() * config.scale.length)];
+  const octave   = Math.random() < 0.25 ? 3 : 2;
+  const freq     = config.root * Math.pow(2, (semitone + octave * 12 - 24) / 12);
+
+  const o = a.createOscillator(); o.type = config.timbre; o.frequency.value = freq;
+  const ng = a.createGain();
+  ng.gain.setValueAtTime(0.045, a.currentTime);
+  ng.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 2.2);
+  o.connect(ng); ng.connect(gain);
+  o.start(); o.stop(a.currentTime + 2.3);
+
+  const delay = config.noteInterval * (0.65 + Math.random() * 0.7);
+  musicState.timeout = setTimeout(scheduleNote, delay);
+}
+
+function stopMusic() {
+  if (!musicState) return;
+  clearTimeout(musicState.timeout);
+  if (_ac && musicState.gain) {
+    try {
+      musicState.gain.gain.linearRampToValueAtTime(0.001, _ac.currentTime + 1.5);
+      const toStop = musicState.droneOscs;
+      const toDisconnect = musicState.gain;
+      setTimeout(() => {
+        toStop.forEach(o => { try { o.stop(); o.disconnect(); } catch(e) {} });
+        try { toDisconnect.disconnect(); } catch(e) {}
+      }, 1600);
+    } catch(e) {}
+  }
+  musicState = null;
+}
 
 // ── Game state ────────────────────────────────────────────────────────────────
 let state = {};
@@ -257,6 +420,7 @@ function generateFloor() {
   computeFOV();
   updateHUD();
   updateMinimap();
+  startMusic(theme);
   log(`Floor ${floor}: ${theme.name}`, 'system');
   if (isBossFloor) log('A terrifying presence lurks ahead...', 'boss');
 }
@@ -325,10 +489,13 @@ function totalAtk() {
 }
 
 function attackEnemy(enemy) {
-  const dmg = Math.max(1, totalAtk() - enemy.def + randi(-1, 2));
+  const isCrit = (state.player.critChance || 0) > 0 && Math.random() < state.player.critChance;
+  const base   = Math.max(1, totalAtk() - enemy.def + randi(-1, 2));
+  const dmg    = isCrit ? base * 2 : base;
   enemy.hp -= dmg;
-  spawnDmgNum(enemy.x, enemy.y, dmg, '#ff8060');
-  spawnSparks(enemy.x, enemy.y, '#ff6040', 6);
+  spawnDmgNum(enemy.x, enemy.y, dmg, isCrit ? '#ffff60' : '#ff8060');
+  spawnSparks(enemy.x, enemy.y, isCrit ? '#ffee40' : '#ff6040', isCrit ? 14 : 6);
+  if (isCrit) log(`Critical hit! ${dmg} damage!`, 'combat');
   sfx.hit();
 
   if (enemy.isBoss && enemy.phase === 1 && enemy.hp <= enemy.maxHp * 0.5 && enemy.hp > 0) {
@@ -671,6 +838,7 @@ function renderHighScores() {
 function gameOver(won) {
   if (state.over) return;
   state.over = true; state.won = won;
+  stopMusic();
   won ? sfx.victory() : sfx.gameOver();
 
   saveScore({ floor: state.floor, level: state.player.level, gold: state.player.gold, kills: state.player.kills || 0, won, ts: Date.now() });
@@ -691,6 +859,11 @@ function gameOver(won) {
 // ── HUD ────────────────────────────────────────────────────────────────────────
 function updateHUD() {
   const p = state.player;
+  if (p.className) {
+    const title = document.querySelector('#stats-panel .panel-title');
+    title.textContent = p.className.toUpperCase();
+    title.style.color = p.classColor || '';
+  }
   document.getElementById('hud-level').textContent = `LVL ${p.level}`;
   document.getElementById('hud-floor').textContent = `FLOOR ${state.floor}`;
   document.getElementById('hud-gold').textContent  = `${p.gold}g`;
@@ -864,12 +1037,14 @@ function render() {
           ctx.strokeRect(px+0.5, py+0.5, TILE-1, TILE-1);
         }
         if (tile === T.STAIRS && vis) {
-          ctx.fillStyle = '#8050c8';
-          ctx.font = `${TILE-4}px monospace`;
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.shadowColor = '#c090f8'; ctx.shadowBlur = 12;
-          ctx.fillText('>', px+TILE/2, py+TILE/2+1);
-          ctx.shadowBlur = 0;
+          if (!drawSprite('tile_stairs', px, py, TILE)) {
+            ctx.fillStyle = '#8050c8';
+            ctx.font = `${TILE-4}px monospace`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#c090f8'; ctx.shadowBlur = 12;
+            ctx.fillText('>', px+TILE/2, py+TILE/2+1);
+            ctx.shadowBlur = 0;
+          }
         }
       }
     }
@@ -877,48 +1052,60 @@ function render() {
 
   // Triggered traps
   state.entities.filter(e => e.kind === 'trap' && e.triggered && state.visible.has(`${e.x},${e.y}`)).forEach(e => {
-    ctx.fillStyle = e.trapType === 'spike' ? '#c04040' : '#60c040';
-    ctx.font = `${TILE-6}px monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('^', e.x*TILE+TILE/2, e.y*TILE+TILE/2+1);
+    if (!drawSprite('tile_trap', e.x*TILE, e.y*TILE, TILE)) {
+      ctx.fillStyle = e.trapType === 'spike' ? '#c04040' : '#60c040';
+      ctx.font = `${TILE-6}px monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('^', e.x*TILE+TILE/2, e.y*TILE+TILE/2+1);
+    }
   });
 
   // Items
   state.entities.filter(e => e.kind === 'item' && state.visible.has(`${e.x},${e.y}`)).forEach(e => {
-    ctx.fillStyle = e.color;
-    ctx.font = `${TILE-5}px monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.shadowColor = e.color; ctx.shadowBlur = 8;
-    ctx.fillText(e.ch, e.x*TILE+TILE/2, e.y*TILE+TILE/2+1);
-    ctx.shadowBlur = 0;
+    if (!drawSprite(e.name, e.x*TILE, e.y*TILE, TILE)) {
+      ctx.fillStyle = e.color;
+      ctx.font = `${TILE-5}px monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = e.color; ctx.shadowBlur = 8;
+      ctx.fillText(e.ch, e.x*TILE+TILE/2, e.y*TILE+TILE/2+1);
+      ctx.shadowBlur = 0;
+    }
   });
 
   // Enemies with HP bars
   state.entities.filter(e => e.kind === 'enemy' && state.visible.has(`${e.x},${e.y}`)).forEach(e => {
     const px = e.x*TILE, py = e.y*TILE;
+
+    // Sprite (with glow for boss)
+    if (e.isBoss) { ctx.shadowColor = e.color; ctx.shadowBlur = 20; }
+    if (!drawSprite(e.name, px, py, TILE)) {
+      ctx.fillStyle = e.color;
+      ctx.font = `bold ${TILE-4}px monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = e.color; ctx.shadowBlur = e.isBoss ? 20 : 10;
+      ctx.fillText(e.ch, px+TILE/2, py+TILE/2+3);
+    }
+    ctx.shadowBlur = 0;
+
+    // HP bar drawn on top of sprite
     const barW = TILE-2, barH = 3;
     ctx.fillStyle = '#200808'; ctx.fillRect(px+1, py+1, barW, barH);
-    const ratio     = clamp(e.hp / e.maxHp, 0, 1);
-    ctx.fillStyle   = ratio > 0.6 ? '#50d060' : ratio > 0.3 ? '#d0a030' : '#d03030';
+    const ratio = clamp(e.hp / e.maxHp, 0, 1);
+    ctx.fillStyle = ratio > 0.6 ? '#50d060' : ratio > 0.3 ? '#d0a030' : '#d03030';
     ctx.fillRect(px+1, py+1, Math.round(barW*ratio), barH);
-
-    ctx.fillStyle = e.color;
-    ctx.font = `bold ${TILE-4}px monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.shadowColor = e.color; ctx.shadowBlur = e.isBoss ? 20 : 10;
-    ctx.fillText(e.ch, px+TILE/2, py+TILE/2+3);
-    ctx.shadowBlur = 0;
   });
 
   // Player
   {
     const px = state.player.x*TILE, py = state.player.y*TILE;
     const pulse = 0.7 + 0.3*Math.sin(torchFlicker*2);
-    ctx.fillStyle = '#f0d080';
-    ctx.font = `bold ${TILE-2}px monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.shadowColor = `rgba(240,200,80,${pulse})`; ctx.shadowBlur = 18*pulse;
-    ctx.fillText('@', px+TILE/2, py+TILE/2+1);
+    if (!drawSprite('player', px, py, TILE)) {
+      ctx.fillStyle = '#f0d080';
+      ctx.font = `bold ${TILE-2}px monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('@', px+TILE/2, py+TILE/2+1);
+    }
     ctx.shadowBlur = 0;
   }
 
@@ -969,7 +1156,7 @@ function render() {
 
 // ── Input ──────────────────────────────────────────────────────────────────────
 canvas.addEventListener('click', e => {
-  if (state.over || state.shopOpen) return;
+  if (state.over || state.shopOpen || state.paused) return;
   const rect  = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
   const scaleY = canvas.height / rect.height;
@@ -1030,7 +1217,8 @@ canvas.addEventListener('mouseleave', () => {
 });
 
 document.addEventListener('keydown', e => {
-  if (state.over || state.shopOpen) return;
+  if (e.key === 'Escape') { togglePause(); return; }
+  if (state.over || state.shopOpen || state.paused) return;
   clickPath = null;
   switch (e.key) {
     case 'ArrowUp':    case 'w': case 'W': case 'k': tryMove( 0,-1); break;
@@ -1055,40 +1243,124 @@ function log(text, cls = 'new') {
 
 // ── Game loop ──────────────────────────────────────────────────────────────────
 function loop() {
-  if (clickPath && clickPath.length > 0 && !state.over && !state.shopOpen) {
-    const [nx, ny] = clickPath[0];
-    tryMove(nx - state.player.x, ny - state.player.y);
-    clickPath.shift();
-    if (clickPath.length === 0) clickPath = null;
+  if (!state.paused) {
+    if (clickPath && clickPath.length > 0 && !state.over && !state.shopOpen) {
+      const [nx, ny] = clickPath[0];
+      tryMove(nx - state.player.x, ny - state.player.y);
+      clickPath.shift();
+      if (clickPath.length === 0) clickPath = null;
+    }
+    updateParticles();
   }
-  updateParticles();
   render();
   requestAnimationFrame(loop);
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────────
-function initGame() {
+// ── Class selection ────────────────────────────────────────────────────────────
+function showClassSelect() {
+  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('pause-overlay').classList.add('hidden');
+  document.getElementById('class-overlay').classList.remove('hidden');
+
+  const container = document.getElementById('class-cards');
+  container.innerHTML = '';
+  Object.entries(CLASSES).forEach(([key, cls]) => {
+    const card = document.createElement('div'); card.className = 'class-card';
+    card.innerHTML = `
+      <div class="class-card-name" style="color:${cls.color}">${cls.name}</div>
+      <div class="class-card-stats">
+        HP  <span>${cls.hp}</span><br>
+        ATK <span>${cls.atk}</span><br>
+        DEF <span>${cls.def}</span>
+      </div>
+      <div class="class-card-divider"></div>
+      <div class="class-card-desc">${cls.desc}</div>
+      <div class="class-card-items">${cls.itemsLabel}</div>`;
+    card.addEventListener('click', () => startRun(key));
+    container.appendChild(card);
+  });
+}
+
+function startRun(classKey) {
+  const cls = CLASSES[classKey];
+  document.getElementById('class-overlay').classList.add('hidden');
+
   state = {
     floor: 1, map: [], rooms: [], entities: [], theme: FLOOR_THEMES[0],
     player: {
-      x: 0, y: 0, hp: 24, maxHp: 24, atk: 4, def: 1,
+      x: 0, y: 0,
+      hp: cls.hp, maxHp: cls.hp, atk: cls.atk, def: cls.def,
       xp: 0, level: 1, gold: 0, kills: 0,
-      inventory: [], weapon: null, armor: null, effects: [],
+      critChance: cls.critChance,
+      className: cls.name, classColor: cls.color,
+      inventory: [...cls.startItems],
+      weapon: cls.startWeapon ? { ...cls.startWeapon } : null,
+      armor: null, effects: [],
     },
     visible: new Set(), explored: new Set(),
-    turn: 0, over: false, won: false, shopOpen: false, shopInventory: [],
+    turn: 0, over: false, won: false, paused: false,
+    shopOpen: false, shopInventory: [],
   };
+
   document.getElementById('overlay').classList.add('hidden');
   document.getElementById('shop-overlay').classList.add('hidden');
   document.getElementById('inspect-tooltip').classList.add('hidden');
   bloodStains = []; particles = []; clickPath = null; shakeFrames = 0;
+
   generateFloor();
-  log('You descend into the vault...', 'system');
+  log(`${cls.name} descends into the vault...`, 'system');
   log('Survive 5 floors and defeat the Vault Warden.', 'system');
 }
 
-document.getElementById('overlay-btn').addEventListener('click', initGame);
-document.getElementById('shop-leave').addEventListener('click', closeShop);
+// ── Pause ──────────────────────────────────────────────────────────────────────
+function togglePause() {
+  if (!state.floor || state.over || state.shopOpen) return;
+  state.paused = !state.paused;
+  document.getElementById('pause-overlay').classList.toggle('hidden', !state.paused);
+}
 
-initGame();
+document.getElementById('overlay-btn').addEventListener('click', showClassSelect);
+document.getElementById('shop-leave').addEventListener('click', closeShop);
+document.getElementById('pause-resume').addEventListener('click', togglePause);
+document.getElementById('pause-restart').addEventListener('click', () => { stopMusic(); showClassSelect(); });
+
+// ── Volume slider ──────────────────────────────────────────────────────────────
+{
+  const slider = document.getElementById('vol-slider');
+  const saved  = parseFloat(localStorage.getItem('vaultborn_vol') ?? '0.5');
+  slider.value = saved;
+  slider.addEventListener('input', () => {
+    const vol = parseFloat(slider.value);
+    if (_masterGain) _masterGain.gain.value = vol;
+    localStorage.setItem('vaultborn_vol', vol);
+  });
+}
+
+// ── Zoom controls ──────────────────────────────────────────────────────────────
+{
+  const ZOOM_STEPS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+  let zoomIdx = ZOOM_STEPS.indexOf(parseFloat(localStorage.getItem('vaultborn_zoom') ?? '1'));
+  if (zoomIdx === -1) zoomIdx = 2;
+
+  function applyZoom() {
+    const z = ZOOM_STEPS[zoomIdx];
+    canvas.style.width  = (COLS * TILE * z) + 'px';
+    canvas.style.height = (ROWS * TILE * z) + 'px';
+    document.getElementById('zoom-label').textContent = z + '×';
+    document.getElementById('zoom-out').disabled = zoomIdx === 0;
+    document.getElementById('zoom-in').disabled  = zoomIdx === ZOOM_STEPS.length - 1;
+    localStorage.setItem('vaultborn_zoom', z);
+  }
+
+  document.getElementById('zoom-in').addEventListener('click', () => {
+    if (zoomIdx < ZOOM_STEPS.length - 1) { zoomIdx++; applyZoom(); }
+  });
+  document.getElementById('zoom-out').addEventListener('click', () => {
+    if (zoomIdx > 0) { zoomIdx--; applyZoom(); }
+  });
+
+  applyZoom();
+}
+
+showClassSelect();
 requestAnimationFrame(loop);

@@ -86,6 +86,35 @@
       <span>Potion: P</span>
       <span>Scroll: U</span>
       <span>Click to move/attack</span>
+      <span class="ctrl-sep"></span>
+      <span class="ctrl-group">
+        <label for="vol-slider">VOL</label>
+        <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.5">
+      </span>
+      <span class="ctrl-group">
+        ZOOM
+        <button class="zoom-btn" id="zoom-out">−</button>
+        <span id="zoom-label">1×</span>
+        <button class="zoom-btn" id="zoom-in">+</button>
+      </span>
+    </div>
+
+    <!-- Class selection overlay -->
+    <div id="class-overlay">
+      <div id="class-box">
+        <h2>VAULTBORN</h2>
+        <p id="class-subtitle">Choose your class to begin.</p>
+        <div id="class-cards"></div>
+      </div>
+    </div>
+
+    <!-- Pause overlay -->
+    <div id="pause-overlay" class="hidden">
+      <div id="pause-box">
+        <h2>PAUSED</h2>
+        <button class="pause-btn" id="pause-resume">RESUME</button>
+        <button class="pause-btn" id="pause-restart">RESTART RUN</button>
+      </div>
     </div>
 
     <!-- Shop overlay -->
